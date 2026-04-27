@@ -1,8 +1,3 @@
-# NetSentry (CS434) - runtime dependencies
-# Packet capture / analysis
-scapy>=2.5.0,<3
-
-# Dashboard (Week 5+)
-flask>=3.0.0,<4
-
-# SQLite is in the Python standard library (no extra package)
+# NetSentry (CS434) — pinned runtime deps for reproducible setup
+# Install: python -m venv .venv && .venv\Scripts\activate && pip install -r requirements.txt
+scapy==2.5.0

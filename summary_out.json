@@ -1,0 +1,78 @@
+{
+  "total_packets": 7,
+  "protocols": {
+    "TCP": 5,
+    "ICMP": 1,
+    "UDP": 1
+  },
+  "top_talkers_packets": [
+    {
+      "ip": "10.0.0.1",
+      "packets": 5
+    },
+    {
+      "ip": "10.0.0.2",
+      "packets": 1
+    },
+    {
+      "ip": "10.0.0.3",
+      "packets": 1
+    }
+  ],
+  "top_talkers_bytes": [
+    {
+      "ip": "10.0.0.1",
+      "bytes": 270
+    },
+    {
+      "ip": "10.0.0.2",
+      "bytes": 42
+    },
+    {
+      "ip": "10.0.0.3",
+      "bytes": 34
+    }
+  ],
+  "time_windows": [
+    {
+      "window_sec": 1.0,
+      "buckets": [
+        {
+          "bucket_start_epoch": 1700000000.0,
+          "bucket_index": 1700000000,
+          "packets": 5,
+          "bytes": 270
+        },
+        {
+          "bucket_start_epoch": 1700000125.0,
+          "bucket_index": 1700000125,
+          "packets": 1,
+          "bytes": 42
+        },
+        {
+          "bucket_start_epoch": 1700000130.0,
+          "bucket_index": 1700000130,
+          "packets": 1,
+          "bytes": 34
+        }
+      ]
+    },
+    {
+      "window_sec": 60.0,
+      "buckets": [
+        {
+          "bucket_start_epoch": 1699999980.0,
+          "bucket_index": 28333333,
+          "packets": 5,
+          "bytes": 270
+        },
+        {
+          "bucket_start_epoch": 1700000100.0,
+          "bucket_index": 28333335,
+          "packets": 2,
+          "bytes": 76
+        }
+      ]
+    }
+  ]
+}
