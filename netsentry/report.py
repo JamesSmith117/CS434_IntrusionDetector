@@ -17,7 +17,6 @@ def summarize_pipeline(
     alerts: Sequence[Alert] | None = None,
     window_sizes_sec: tuple[float, ...] = (1.0, 60.0),
 ) -> dict[str, Any]:
-    """Shape a report object from features + alerts."""
     windows: list[dict[str, Any]] = []
     for w in window_sizes_sec:
         buckets = build_window_buckets(summaries, w)
@@ -36,18 +35,17 @@ def summarize_pipeline(
             }
         )
 
-    alert_rows = []
-    for a in alerts or []:
-        alert_rows.append(
-            {
-                "ts_epoch": a.ts_epoch,
-                "severity": a.severity,
-                "rule_id": a.rule_id,
-                "description": a.description,
-                "src_ip": a.src_ip,
-                "dst_ip": a.dst_ip,
-            }
-        )
+    alert_rows = [
+        {
+            "ts_epoch": a.ts_epoch,
+            "severity": a.severity,
+            "rule_id": a.rule_id,
+            "description": a.description,
+            "src_ip": a.src_ip,
+            "dst_ip": a.dst_ip,
+        }
+        for a in (alerts or [])
+    ]
 
     return {
         "total_packets": len(summaries),
@@ -79,8 +77,7 @@ def print_summary_text(data: dict[str, Any], out: TextIO) -> None:
 
     out.write(f"Alerts: {len(data.get('alerts', []))}\n")
     for tw in data["time_windows"]:
-        w = tw["window_sec"]
-        out.write(f"Time windows ({w}s): {len(tw['buckets'])} buckets\n")
+        out.write(f"Time windows ({tw['window_sec']}s): {len(tw['buckets'])} buckets\n")
         for b in tw["buckets"][:8]:
             out.write(
                 f"  start={b['bucket_start_epoch']:.3f}s idx={b['bucket_index']}: "

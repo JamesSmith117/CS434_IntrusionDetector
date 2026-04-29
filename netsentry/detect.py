@@ -7,8 +7,5 @@ from netsentry.records import PacketSummary
 
 
 def detect_alerts(_summaries: Sequence[PacketSummary]) -> list[Alert]:
-    """
-    Rule engine boundary.
-    Week 3-4 rules should live here and return Alert objects.
-    """
+    """Rule engine boundary; week 3-4 rules should live here."""
     return []

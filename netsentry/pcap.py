@@ -13,12 +13,8 @@ from netsentry.records import PacketSummary
 _PROTO_NAMES = {1: "ICMP", 6: "TCP", 17: "UDP", 58: "ICMPv6"}
 
 
-def _packet_ts(pkt: Packet) -> float:
-    return float(pkt.time)
-
-
-def _summarize_packet(pkt: Packet) -> PacketSummary | None:
-    """Return a normalized packet record for IPv4/IPv6 packets."""
+def summarize_packet(pkt: Packet) -> PacketSummary | None:
+    """Extract normalized fields from IPv4/IPv6 packets."""
     ip4 = pkt.getlayer(IP)
     ip6 = pkt.getlayer(IPv6)
     if ip4 is not None:
@@ -40,7 +36,7 @@ def _summarize_packet(pkt: Packet) -> PacketSummary | None:
         src_port, dst_port = int(payload.sport), int(payload.dport)
 
     return PacketSummary(
-        ts_epoch=_packet_ts(pkt),
+        ts_epoch=float(pkt.time),
         src_ip=src_ip,
         dst_ip=dst_ip,
         src_port=src_port,
@@ -52,7 +48,7 @@ def _summarize_packet(pkt: Packet) -> PacketSummary | None:
 
 
 def iter_packet_summaries(pcap_path: str) -> Iterator[PacketSummary]:
-    """Stream normalized packets from a pcap/pcapng file."""
+    """Stream packet summaries from a pcap/pcapng file."""
     path = os.path.abspath(pcap_path)
     if not os.path.isfile(path):
         raise FileNotFoundError(f"pcap not found: {path}")
@@ -62,7 +58,7 @@ def iter_packet_summaries(pcap_path: str) -> Iterator[PacketSummary]:
         for pkt in reader:
             if pkt is None:
                 continue
-            summary = _summarize_packet(pkt)
+            summary = summarize_packet(pkt)
             if summary is not None:
                 yield summary
     finally:

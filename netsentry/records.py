@@ -6,7 +6,7 @@ from typing import Optional
 
 @dataclass(frozen=True)
 class PacketSummary:
-    """Normalized packet fields produced by the ingest layer."""
+    """Normalized per-packet fields used by features/reporting."""
 
     ts_epoch: float
     src_ip: Optional[str]
@@ -20,7 +20,7 @@ class PacketSummary:
 
 @dataclass(frozen=True)
 class WindowBucket:
-    """Single fixed-size time bucket."""
+    """Aggregated packet/byte totals for one fixed-size time bucket."""
 
     window_sec: float
     bucket_index: int
@@ -31,7 +31,7 @@ class WindowBucket:
 
 @dataclass(frozen=True)
 class FlowKey:
-    """Flow-ish key for future detection features."""
+    """Basic flow-ish key for future detection features."""
 
     src_ip: str
     dst_ip: str

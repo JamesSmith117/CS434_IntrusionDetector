@@ -6,7 +6,7 @@ from typing import Optional
 
 @dataclass(frozen=True)
 class Alert:
-    """Detection output contract shared by rules and output layers."""
+    """Detection output contract shared by rules and report layers."""
 
     ts_epoch: float
     severity: str

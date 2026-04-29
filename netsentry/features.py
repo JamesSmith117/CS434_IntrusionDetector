@@ -16,7 +16,6 @@ def build_window_buckets(
 ) -> list[WindowBucket]:
     packet_counts: dict[int, int] = defaultdict(int)
     byte_counts: dict[int, int] = defaultdict(int)
-
     for s in summaries:
         b = bucket_index(s.ts_epoch, window_sec)
         packet_counts[b] += 1

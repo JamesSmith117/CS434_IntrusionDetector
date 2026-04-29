@@ -6,13 +6,11 @@
 - Time-bucketed stats: default **1s** and **60s** windows (`aggregate.py`, `report.py`).
 - End-to-end proof: `scripts/gen_sample_pcap.py` + `python -m netsentry <pcap> [--json …]`.
 - Synthetic tiny pcaps: `scripts/gen_sample_pcap.py` for predictable local demos.
+- Clean module boundaries: capture/read, parse/features, detection, and reporting split into dedicated modules.
+- Live capture path: optional CLI mode (`--live`) implemented and validated on local machine.
 
 
 ### Must be done
-
-- [ ] Clean module boundaries: separate capture/read, parse/features, and aggregation so Weeks 3–4 detection plugs in cleanly.
-
-- [ ] Live capture (optional path): separate CLI/flag for live sniff if your machine permissions/interface setup allow it—don’t block the project on this.
 
 - [ ] Lightweight persistence of summaries: write rolling window stats to a simple file (CSV/JSON lines) for debugging and later dashboard reuse.
 
