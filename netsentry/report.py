@@ -16,7 +16,7 @@ def summarize_pipeline(
     summaries: Sequence[PacketSummary],
     window_sizes_sec: tuple[float, float] = (1.0, 60.0),
 ) -> dict[str, Any]:
-    """Structured summary for print or JSON."""
+    """Build one structured object for text output and JSON export."""
     windows: list[dict[str, Any]] = []
     for w in window_sizes_sec:
         st = build_window_stats(summaries, w)
@@ -25,6 +25,7 @@ def summarize_pipeline(
                 "window_sec": st.window_sec,
                 "buckets": [
                     {
+                        # Convert bucket index back to the bucket's start epoch.
                         "bucket_start_epoch": b * st.window_sec,
                         "bucket_index": b,
                         "packets": st.packet_counts[b],
@@ -49,16 +50,20 @@ def summarize_pipeline(
 
 
 def print_summary_text(data: dict[str, Any], out: TextIO) -> None:
+    """Pretty terminal summary for quick human validation."""
     out.write(f"Total packets (IP): {data['total_packets']}\n")
     out.write("Protocols:\n")
     for name, cnt in data["protocols"].items():
         out.write(f"  {name}: {cnt}\n")
+
     out.write("Top talkers (packets):\n")
     for row in data["top_talkers_packets"][:5]:
         out.write(f"  {row['ip']}: {row['packets']}\n")
+
     out.write("Top talkers (bytes):\n")
     for row in data["top_talkers_bytes"][:5]:
         out.write(f"  {row['ip']}: {row['bytes']}\n")
+
     for tw in data["time_windows"]:
         w = tw["window_sec"]
         out.write(f"Time windows ({w}s): {len(tw['buckets'])} buckets\n")
@@ -72,5 +77,6 @@ def print_summary_text(data: dict[str, Any], out: TextIO) -> None:
 
 
 def write_summary_json(data: dict[str, Any], path: str) -> None:
+    """Persist structured summary for later analysis or dashboard use."""
     with open(path, "w", encoding="utf-8") as f:
         json.dump(data, f, indent=2)

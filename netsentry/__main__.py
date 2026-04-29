@@ -8,19 +8,16 @@ from netsentry.report import print_summary_text, summarize_pipeline, write_summa
 
 
 def main(argv: list[str] | None = None) -> int:
+    """CLI entry point for offline pcap processing."""
     p = argparse.ArgumentParser(
         description="Offline pcap pipeline: extract fields, time buckets, summary."
     )
     p.add_argument("pcap", help="Path to .pcap or .pcapng")
-    p.add_argument(
-        "--json",
-        metavar="PATH",
-        help="Write full summary as JSON",
-    )
+    p.add_argument("--json", metavar="PATH", help="Write full summary as JSON")
     p.add_argument(
         "--windows",
         default="1,60",
-        help="Comma-separated time window sizes in seconds (default: 1,60)",
+        help="Comma-separated window sizes in seconds (default: 1,60)",
     )
     args = p.parse_args(argv)
 
@@ -33,6 +30,7 @@ def main(argv: list[str] | None = None) -> int:
         print("Window sizes must be positive.", file=sys.stderr)
         return 2
 
+    # Read full run into memory once so multiple aggregations can reuse it.
     summaries = list(iter_packet_summaries(args.pcap))
     data = summarize_pipeline(summaries, window_sizes_sec=sizes)
     print_summary_text(data, sys.stdout)

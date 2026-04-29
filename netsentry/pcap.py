@@ -10,7 +10,7 @@ from scapy.packet import Packet
 
 from netsentry.records import PacketSummary
 
-# IANA protocol numbers we surface by name
+# Small protocol-name map for readable summaries.
 _PROTO_NAMES = {
     1: "ICMP",
     6: "TCP",
@@ -20,12 +20,15 @@ _PROTO_NAMES = {
 
 
 def _layer_ts(pkt: Packet) -> float:
-    t = float(pkt.time)
-    return t
+    """Scapy timestamp normalized as float seconds."""
+    return float(pkt.time)
 
 
 def _summarize_packet(pkt: Packet) -> PacketSummary | None:
-    """Return a summary for IP-bearing packets; skip others."""
+    """
+    Extract fields from IPv4/IPv6 packets.
+    Returns None for packets without an IP layer.
+    """
     ip4 = pkt.getlayer(IP)
     ip6 = pkt.getlayer(IPv6)
     if ip4 is not None:
@@ -39,6 +42,7 @@ def _summarize_packet(pkt: Packet) -> PacketSummary | None:
     else:
         return None
 
+    # Ports only exist for transport layers like TCP/UDP.
     src_port: int | None = None
     dst_port: int | None = None
     if isinstance(payload, TCP):
@@ -46,7 +50,6 @@ def _summarize_packet(pkt: Packet) -> PacketSummary | None:
     elif isinstance(payload, UDP):
         src_port, dst_port = int(payload.sport), int(payload.dport)
 
-    name = _PROTO_NAMES.get(proto_num, f"proto_{proto_num}")
     return PacketSummary(
         ts_epoch=_layer_ts(pkt),
         src_ip=src_ip,
@@ -54,16 +57,15 @@ def _summarize_packet(pkt: Packet) -> PacketSummary | None:
         src_port=src_port,
         dst_port=dst_port,
         proto_num=proto_num,
-        proto_name=name,
+        proto_name=_PROTO_NAMES.get(proto_num, f"proto_{proto_num}"),
         size_bytes=len(pkt),
     )
 
 
 def iter_packet_summaries(pcap_path: str) -> Iterator[PacketSummary]:
     """
-    Stream packets from a pcap/pcapng file without loading the whole file.
-    Yields PacketSummary for each IPv4/IPv6 packet; non-IP link types are skipped
-    if they have no IP layer.
+    Stream summaries from a pcap/pcapng file.
+    Uses PcapReader so large captures do not need to fit in memory.
     """
     path = os.path.abspath(pcap_path)
     if not os.path.isfile(path):

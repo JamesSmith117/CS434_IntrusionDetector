@@ -16,18 +16,22 @@ def main() -> int:
     ap.add_argument("-o", "--output", default="sample.pcap", help="Output path")
     args = ap.parse_args()
 
-    base = 1_700_000_000.0  # fixed epoch anchor for reproducible bucket boundaries
+    # Fixed base timestamp keeps bucketing results deterministic.
+    base = 1_700_000_000.0
     pkts = []
 
+    # A short HTTPS-like burst from one host.
     for i in range(5):
         pkt = Ether() / IP(src="10.0.0.1", dst="10.0.0.2") / TCP(sport=49152 + i, dport=443)
         pkt.time = base + i * 0.2
         pkts.append(pkt)
 
+    # A later UDP response-like packet.
     u = Ether() / IP(src="10.0.0.2", dst="10.0.0.1") / UDP(sport=443, dport=49152)
     u.time = base + 125.0
     pkts.append(u)
 
+    # A simple ICMP packet to diversify protocol counts.
     icmp = Ether() / IP(src="10.0.0.3", dst="10.0.0.2", proto=1)
     icmp.time = base + 130.0
     pkts.append(icmp)
