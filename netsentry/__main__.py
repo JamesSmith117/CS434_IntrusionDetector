@@ -3,17 +3,28 @@ from __future__ import annotations
 import argparse
 import sys
 
+from netsentry.detect import detect_alerts
 from netsentry.pcap import iter_packet_summaries
-from netsentry.report import print_summary_text, summarize_pipeline, write_summary_json
+from netsentry.persist import write_json
+from netsentry.report import print_summary_text, summarize_pipeline
+
+
+def _parse_windows(raw: str) -> tuple[float, ...]:
+    try:
+        sizes = tuple(float(x.strip()) for x in raw.split(",") if x.strip())
+    except ValueError as exc:
+        raise ValueError("Invalid --windows. Example: 1,60") from exc
+    if not sizes or any(w <= 0 for w in sizes):
+        raise ValueError("Window sizes must be positive")
+    return sizes
 
 
 def main(argv: list[str] | None = None) -> int:
-    """CLI entry point for offline pcap processing."""
     p = argparse.ArgumentParser(
-        description="Offline pcap pipeline: extract fields, time buckets, summary."
+        description="Offline pcap pipeline: extract fields, windows, and report."
     )
     p.add_argument("pcap", help="Path to .pcap or .pcapng")
-    p.add_argument("--json", metavar="PATH", help="Write full summary as JSON")
+    p.add_argument("--json", metavar="PATH", help="Write full summary JSON")
     p.add_argument(
         "--windows",
         default="1,60",
@@ -22,22 +33,24 @@ def main(argv: list[str] | None = None) -> int:
     args = p.parse_args(argv)
 
     try:
-        sizes = tuple(float(x.strip()) for x in args.windows.split(",") if x.strip())
-    except ValueError:
-        print("Invalid --windows: use comma-separated numbers, e.g. 1,60", file=sys.stderr)
-        return 2
-    if not sizes or any(w <= 0 for w in sizes):
-        print("Window sizes must be positive.", file=sys.stderr)
+        window_sizes = _parse_windows(args.windows)
+    except ValueError as err:
+        print(str(err), file=sys.stderr)
         return 2
 
-    # Read full run into memory once so multiple aggregations can reuse it.
+    # Pipeline orchestration only.
     summaries = list(iter_packet_summaries(args.pcap))
-    data = summarize_pipeline(summaries, window_sizes_sec=sizes)
+    alerts = detect_alerts(summaries)
+    data = summarize_pipeline(
+        summaries=summaries,
+        alerts=alerts,
+        window_sizes_sec=window_sizes,
+    )
     print_summary_text(data, sys.stdout)
 
     if args.json:
-        write_summary_json(data, args.json)
-        print(f"Wrote JSON summary to {args.json}", file=sys.stdout)
+        write_json(args.json, data)
+        print(f"Wrote JSON summary to {args.json}")
 
     return 0
 

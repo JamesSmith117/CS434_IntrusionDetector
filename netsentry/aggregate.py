@@ -1,5 +1,27 @@
 from __future__ import annotations
 
+"""
+Back-compat shim.
+Prefer importing from netsentry.features in new code.
+"""
+
+from netsentry.features import (
+    bucket_index,
+    build_window_buckets,
+    proto_counts,
+    top_talkers_by_bytes,
+    top_talkers_by_packets,
+)
+
+__all__ = [
+    "bucket_index",
+    "build_window_buckets",
+    "top_talkers_by_packets",
+    "top_talkers_by_bytes",
+    "proto_counts",
+]
+from __future__ import annotations
+
 from collections import Counter, defaultdict
 from dataclasses import dataclass
 from typing import Iterable, Sequence

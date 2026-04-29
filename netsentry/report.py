@@ -1,10 +1,10 @@
 from __future__ import annotations
 
-import json
 from typing import Any, Sequence, TextIO
 
-from netsentry.aggregate import (
-    build_window_stats,
+from netsentry.alerts import Alert
+from netsentry.features import (
+    build_window_buckets,
     proto_counts,
     top_talkers_by_bytes,
     top_talkers_by_packets,
@@ -14,25 +14,38 @@ from netsentry.records import PacketSummary
 
 def summarize_pipeline(
     summaries: Sequence[PacketSummary],
-    window_sizes_sec: tuple[float, float] = (1.0, 60.0),
+    alerts: Sequence[Alert] | None = None,
+    window_sizes_sec: tuple[float, ...] = (1.0, 60.0),
 ) -> dict[str, Any]:
-    """Build one structured object for text output and JSON export."""
+    """Shape a report object from features + alerts."""
     windows: list[dict[str, Any]] = []
     for w in window_sizes_sec:
-        st = build_window_stats(summaries, w)
+        buckets = build_window_buckets(summaries, w)
         windows.append(
             {
-                "window_sec": st.window_sec,
+                "window_sec": w,
                 "buckets": [
                     {
-                        # Convert bucket index back to the bucket's start epoch.
-                        "bucket_start_epoch": b * st.window_sec,
-                        "bucket_index": b,
-                        "packets": st.packet_counts[b],
-                        "bytes": st.byte_counts[b],
+                        "bucket_start_epoch": b.bucket_start_epoch,
+                        "bucket_index": b.bucket_index,
+                        "packets": b.packets,
+                        "bytes": b.bytes,
                     }
-                    for b in st.packet_counts
+                    for b in buckets
                 ],
+            }
+        )
+
+    alert_rows = []
+    for a in alerts or []:
+        alert_rows.append(
+            {
+                "ts_epoch": a.ts_epoch,
+                "severity": a.severity,
+                "rule_id": a.rule_id,
+                "description": a.description,
+                "src_ip": a.src_ip,
+                "dst_ip": a.dst_ip,
             }
         )
 
@@ -45,12 +58,12 @@ def summarize_pipeline(
         "top_talkers_bytes": [
             {"ip": ip, "bytes": cnt} for ip, cnt in top_talkers_by_bytes(summaries, 10)
         ],
+        "alerts": alert_rows,
         "time_windows": windows,
     }
 
 
 def print_summary_text(data: dict[str, Any], out: TextIO) -> None:
-    """Pretty terminal summary for quick human validation."""
     out.write(f"Total packets (IP): {data['total_packets']}\n")
     out.write("Protocols:\n")
     for name, cnt in data["protocols"].items():
@@ -64,6 +77,7 @@ def print_summary_text(data: dict[str, Any], out: TextIO) -> None:
     for row in data["top_talkers_bytes"][:5]:
         out.write(f"  {row['ip']}: {row['bytes']}\n")
 
+    out.write(f"Alerts: {len(data.get('alerts', []))}\n")
     for tw in data["time_windows"]:
         w = tw["window_sec"]
         out.write(f"Time windows ({w}s): {len(tw['buckets'])} buckets\n")
@@ -74,9 +88,3 @@ def print_summary_text(data: dict[str, Any], out: TextIO) -> None:
             )
         if len(tw["buckets"]) > 8:
             out.write(f"  ... ({len(tw['buckets']) - 8} more buckets)\n")
-
-
-def write_summary_json(data: dict[str, Any], path: str) -> None:
-    """Persist structured summary for later analysis or dashboard use."""
-    with open(path, "w", encoding="utf-8") as f:
-        json.dump(data, f, indent=2)

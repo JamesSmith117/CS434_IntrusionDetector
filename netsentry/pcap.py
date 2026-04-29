@@ -10,25 +10,15 @@ from scapy.packet import Packet
 
 from netsentry.records import PacketSummary
 
-# Small protocol-name map for readable summaries.
-_PROTO_NAMES = {
-    1: "ICMP",
-    6: "TCP",
-    17: "UDP",
-    58: "ICMPv6",
-}
+_PROTO_NAMES = {1: "ICMP", 6: "TCP", 17: "UDP", 58: "ICMPv6"}
 
 
-def _layer_ts(pkt: Packet) -> float:
-    """Scapy timestamp normalized as float seconds."""
+def _packet_ts(pkt: Packet) -> float:
     return float(pkt.time)
 
 
 def _summarize_packet(pkt: Packet) -> PacketSummary | None:
-    """
-    Extract fields from IPv4/IPv6 packets.
-    Returns None for packets without an IP layer.
-    """
+    """Return a normalized packet record for IPv4/IPv6 packets."""
     ip4 = pkt.getlayer(IP)
     ip6 = pkt.getlayer(IPv6)
     if ip4 is not None:
@@ -42,7 +32,6 @@ def _summarize_packet(pkt: Packet) -> PacketSummary | None:
     else:
         return None
 
-    # Ports only exist for transport layers like TCP/UDP.
     src_port: int | None = None
     dst_port: int | None = None
     if isinstance(payload, TCP):
@@ -51,7 +40,7 @@ def _summarize_packet(pkt: Packet) -> PacketSummary | None:
         src_port, dst_port = int(payload.sport), int(payload.dport)
 
     return PacketSummary(
-        ts_epoch=_layer_ts(pkt),
+        ts_epoch=_packet_ts(pkt),
         src_ip=src_ip,
         dst_ip=dst_ip,
         src_port=src_port,
@@ -63,10 +52,7 @@ def _summarize_packet(pkt: Packet) -> PacketSummary | None:
 
 
 def iter_packet_summaries(pcap_path: str) -> Iterator[PacketSummary]:
-    """
-    Stream summaries from a pcap/pcapng file.
-    Uses PcapReader so large captures do not need to fit in memory.
-    """
+    """Stream normalized packets from a pcap/pcapng file."""
     path = os.path.abspath(pcap_path)
     if not os.path.isfile(path):
         raise FileNotFoundError(f"pcap not found: {path}")
