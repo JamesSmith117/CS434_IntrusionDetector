@@ -12,7 +12,7 @@
 
 ### Must be done
 
-- [ ] Lightweight persistence of summaries: write rolling window stats to a simple file (CSV/JSON lines) for debugging and later dashboard reuse.
+- [x] Lightweight persistence of summaries: write rolling window stats to a simple file (CSV/JSON lines) for debugging and later dashboard reuse.
 
 
 

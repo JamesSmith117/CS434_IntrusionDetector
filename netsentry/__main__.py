@@ -2,11 +2,12 @@ from __future__ import annotations
 
 import argparse
 import sys
+from pathlib import Path
 
 from netsentry.detect import detect_alerts
 from netsentry.live import capture_live_summaries
 from netsentry.pcap import iter_packet_summaries
-from netsentry.persist import write_json
+from netsentry.persist import flatten_window_buckets, write_csv, write_json, write_jsonl
 from netsentry.report import print_summary_text, summarize_pipeline
 
 
@@ -30,6 +31,11 @@ def main(argv: list[str] | None = None) -> int:
         help="Path to .pcap or .pcapng (required unless --live is used)",
     )
     p.add_argument("--json", metavar="PATH", help="Write full summary JSON")
+    p.add_argument(
+        "--window-stats-out",
+        metavar="PATH",
+        help="Write rolling window bucket rows to .jsonl or .csv",
+    )
     p.add_argument("--windows", default="1,60", help="Comma-separated window sizes in seconds")
     p.add_argument("--live", action="store_true", help="Use live packet capture mode")
     p.add_argument("--iface", help="Interface name for live capture")
@@ -81,6 +87,22 @@ def main(argv: list[str] | None = None) -> int:
     if args.json:
         write_json(args.json, data)
         print(f"Wrote JSON summary to {args.json}")
+
+    if args.window_stats_out:
+        window_rows = flatten_window_buckets(data)
+        out_path = args.window_stats_out
+        suffix = Path(out_path).suffix.lower()
+        if suffix == ".jsonl":
+            write_jsonl(out_path, window_rows)
+        elif suffix == ".csv":
+            write_csv(out_path, window_rows)
+        else:
+            print(
+                "--window-stats-out must end with .jsonl or .csv",
+                file=sys.stderr,
+            )
+            return 2
+        print(f"Wrote window stats ({len(window_rows)} rows) to {out_path}")
 
     return 0
 
