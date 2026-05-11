@@ -75,7 +75,16 @@ def print_summary_text(data: dict[str, Any], out: TextIO) -> None:
     for row in data["top_talkers_bytes"][:5]:
         out.write(f"  {row['ip']}: {row['bytes']}\n")
 
-    out.write(f"Alerts: {len(data.get('alerts', []))}\n")
+    alerts = data.get("alerts", [])
+    out.write(f"Alerts: {len(alerts)}\n")
+    for row in alerts:
+        sid = row.get("src_ip") or "-"
+        did = row.get("dst_ip") or "-"
+        out.write(
+            f"  [{row.get('severity', '?')}] {row.get('rule_id', '?')} "
+            f"src={sid} dst={did}\n"
+            f"    {row.get('description', '')}\n"
+        )
     for tw in data["time_windows"]:
         out.write(f"Time windows ({tw['window_sec']}s): {len(tw['buckets'])} buckets\n")
         for b in tw["buckets"][:8]:

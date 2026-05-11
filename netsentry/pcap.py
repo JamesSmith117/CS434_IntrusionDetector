@@ -30,8 +30,10 @@ def summarize_packet(pkt: Packet) -> PacketSummary | None:
 
     src_port: int | None = None
     dst_port: int | None = None
+    tcp_flags: int | None = None
     if isinstance(payload, TCP):
         src_port, dst_port = int(payload.sport), int(payload.dport)
+        tcp_flags = int(payload.flags)
     elif isinstance(payload, UDP):
         src_port, dst_port = int(payload.sport), int(payload.dport)
 
@@ -44,6 +46,7 @@ def summarize_packet(pkt: Packet) -> PacketSummary | None:
         proto_num=proto_num,
         proto_name=_PROTO_NAMES.get(proto_num, f"proto_{proto_num}"),
         size_bytes=len(pkt),
+        tcp_flags=tcp_flags,
     )
 
 

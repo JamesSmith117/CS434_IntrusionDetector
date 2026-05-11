@@ -1,13 +1,14 @@
 from __future__ import annotations
 
 import argparse
+import os
 import sys
 from pathlib import Path
 
 from netsentry.detect import detect_alerts
 from netsentry.live import capture_live_summaries
 from netsentry.pcap import iter_packet_summaries
-from netsentry.persist import flatten_window_buckets, write_csv, write_json, write_jsonl
+from netsentry.persist import flatten_window_buckets, persist_alerts, write_csv, write_json, write_jsonl
 from netsentry.report import print_summary_text, summarize_pipeline
 
 
@@ -35,6 +36,11 @@ def main(argv: list[str] | None = None) -> int:
         "--window-stats-out",
         metavar="PATH",
         help="Write rolling window bucket rows to .jsonl or .csv",
+    )
+    p.add_argument(
+        "--alerts-out",
+        metavar="PATH",
+        help="Write detection alerts to .json, .jsonl, .csv, .sqlite, or .db",
     )
     p.add_argument("--windows", default="1,60", help="Comma-separated window sizes in seconds")
     p.add_argument("--live", action="store_true", help="Use live packet capture mode")
@@ -87,6 +93,15 @@ def main(argv: list[str] | None = None) -> int:
     if args.json:
         write_json(args.json, data)
         print(f"Wrote JSON summary to {args.json}")
+
+    if args.alerts_out:
+        source = os.path.abspath(args.pcap) if args.pcap else "live"
+        try:
+            persist_alerts(args.alerts_out, alerts, source=source)
+        except ValueError as err:
+            print(str(err), file=sys.stderr)
+            return 2
+        print(f"Wrote {len(alerts)} alerts to {args.alerts_out}")
 
     if args.window_stats_out:
         window_rows = flatten_window_buckets(data)

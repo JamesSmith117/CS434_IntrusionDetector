@@ -16,6 +16,7 @@ class PacketSummary:
     proto_num: Optional[int]
     proto_name: str
     size_bytes: int
+    tcp_flags: Optional[int] = None  # TCP control bits; None for non-TCP
 
 
 @dataclass(frozen=True)

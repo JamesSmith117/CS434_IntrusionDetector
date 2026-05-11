@@ -8,17 +8,22 @@
 - Synthetic tiny pcaps: `scripts/gen_sample_pcap.py` for predictable local demos.
 - Clean module boundaries: capture/read, parse/features, detection, and reporting split into dedicated modules.
 - Live capture path: optional CLI mode (`--live`) implemented and validated on local machine.
+- Rolling window stats export: `--window-stats-out` to CSV or JSON lines for debugging and dashboard reuse (`README.md` rolling window section).
+- **Detection engine** (`netsentry/detect.py`): rule-based heuristics for TCP vertical port scans, SYN-only flood buckets, DNS volume/large UDP/53 payloads, and brute-force-style traffic to sensitive ports; uses `tcp_flags` + `features.bucket_index`. Documented in `README.md` (Netsentry Directory).
+- **Structured alerts:** `Alert` dataclass (`netsentry/alerts.py`); detection output merged into pipeline summary, printed in the text report, and included in `--json` (`report.py` / `__main__.py`).
+- **Alert persistence:** `--alerts-out` writes JSON, JSONL, CSV, or SQLite (`.sqlite`/`.db`); includes `ingest_wall`, `source`, and alert fields for dashboard/history (`persist.py`; documented in `README.md`).
+- **Demo / report ammo:** `scripts/gen_demo_pcaps.py` — one synthetic pcap per `rule_id`, `--verify` self-check; commands and expected IDs in `README.md` (Detection demo scenarios).
 
 
 ### Must be done
 
-- [x] Lightweight persistence of summaries: write rolling window stats to a simple file (CSV/JSON lines) for debugging and later dashboard reuse.
+*(Next on the proposal timeline: Week 5 Flask dashboard; Week 6 controlled tests + final report — see `README.md`.)*
 
 
 
 ### Should get done
 
-- [ ] Flow-ish tracking: basic per (src IP, dst IP, dst port) counters to prep for brute-force / scan heuristics later.
+- [ ] Flow-ish tracking: reusable per-(src IP, dst IP, dst port) counters exposed from features (detection already uses similar grouping internally).
 
 - [ ] Perf guardrails: simple timing/logging on pcap processing speed if files are large (only matters if you already see slowness).
 
@@ -28,11 +33,9 @@
 
 - [ ] Add small validation tests for packet processing (field extraction + window bucket correctness on synthetic pcaps).
 
-- [ ] Create 2-3 additional sample pcaps with predictable traffic patterns (normal mix, burst traffic, simple scan-like behavior).
+- [ ] Rule-specific demo pcaps are covered by `scripts/gen_demo_pcaps.py`; add more edge-case pcaps (e.g. mixed benign + attack) if the final report needs them.
 
 - [ ] Add a quick packet-processing benchmark command (packets/sec + runtime on a medium pcap).
-
-- [ ] Write a short “Week 2 packet processing complete” checklist in `README.md` with run commands and expected output.
 
 
 If you want this tightened further, say whether your instructor expects live capture this week or if pcap-only is acceptable for the milestone.
